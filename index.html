@@ -595,9 +595,25 @@
   document.addEventListener('pointerdown', () => { if (!wakeLock || wakeLock.released) keepAwake(); });
   keepAwake();
 
+  // ---------- funcionar sem internet ----------
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => navigator.serviceWorker.ready)
+        .then(() => {
+          // avisa uma vez quando o app já está guardado no aparelho
+          try {
+            if (!localStorage.getItem('offline-ok')) {
+              localStorage.setItem('offline-ok', '1');
+              toast('✓ Pronto para usar sem internet');
+            }
+          } catch (e) {}
+        })
+        .catch(() => {});
+    });
   }
+  // pede ao sistema para não apagar o placar salvo
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   render();
 })();

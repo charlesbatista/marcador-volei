@@ -27,6 +27,21 @@ Funciona em pé (times um em cima do outro) ou deitado (lado a lado).
 
 Pronto: o ícone 🏐 aparece na Tela de Início.
 
+## Sem internet
+
+O app funciona 100% offline: não usa nada da internet (nem fontes, nem
+imagens de fora). Só é preciso internet **uma vez**:
+
+1. Depois de adicionar à Tela de Início, **abra o app pelo ícone com internet**.
+2. Espere aparecer o aviso **“✓ Pronto para usar sem internet”**.
+
+A partir daí ele abre direto do iPhone, instantâneo, mesmo em modo avião ou com
+sinal ruim. Quando tiver internet, ele baixa atualizações em segundo plano
+(aparecem na próxima vez que abrir).
+
+> O app da Tela de Início guarda os dados separado do Safari, por isso esse
+> primeiro acesso precisa ser pelo ícone, não pelo Safari.
+
 ## Publicar grátis com GitHub Pages
 
 1. No GitHub, abra o repositório → **Settings** → **Pages**.
