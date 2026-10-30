@@ -1,6 +1,6 @@
 // Guarda o app no aparelho para funcionar sem internet.
 // Ao mudar algum arquivo, aumente a versão para os celulares baixarem a nova.
-const CACHE = 'marcador-volei-v4';
+const CACHE = 'marcador-volei-v5';
 const FILES = [
   './',
   'index.html',

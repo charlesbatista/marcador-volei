@@ -17,6 +17,9 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
   troca de lado automática.
 - A **bola** mostra quem está sacando (o time que fez o último ponto).
 - As **bolinhas** embaixo mostram os sets ganhos.
+- **Vai a 3:** no empate a um ponto do fim (11 × 11 no set de 12, 24 × 24 no
+  de 25), a tela fica dourada, o placar zera e quem fizer 3 primeiro ganha o
+  set. Dá para desligar em ⚙ Ajustes.
 - O placar fica salvo no aparelho: se fechar o app, ele volta de onde parou.
 - A tela fica ligada enquanto o app está aberto (iOS 18.4 ou mais recente).
 

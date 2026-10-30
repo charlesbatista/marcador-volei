@@ -36,14 +36,13 @@
     -webkit-touch-callout: none;
     overscroll-behavior: none;
   }
-  body { display: flex; flex-direction: column; touch-action: manipulation; }
+  body { display: flex; flex-direction: column; touch-action: manipulation; transition: background-color .6s, color .6s; }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
 
   /* ---------- barra superior ---------- */
   .bar {
     display: flex; align-items: center; gap: 6px;
     padding: calc(var(--safe-t) + 6px) calc(var(--safe-r) + 10px) 6px calc(var(--safe-l) + 10px);
-    background: var(--bg);
   }
   .bar .info { flex: 1; text-align: center; min-width: 0; }
   .bar .set-label { font-weight: 700; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; }
@@ -66,7 +65,7 @@
   .half {
     position: relative; flex: 1; min-width: 0; min-height: 0;
     border-radius: 22px; overflow: hidden;
-    background: var(--team);
+    background: var(--team); color: #fff;
     container-type: size;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     touch-action: none;
@@ -128,7 +127,7 @@
   .sheet {
     width: 100%; max-width: 420px; max-height: calc(100% - var(--safe-t) - var(--safe-b));
     overflow-y: auto; -webkit-overflow-scrolling: touch;
-    background: var(--panel); border-radius: 22px; padding: 22px;
+    background: var(--panel); color: var(--text); border-radius: 22px; padding: 22px;
     -webkit-user-select: text; user-select: text;
   }
   .sheet h2 { margin: 0 0 6px; font-size: 22px; }
@@ -167,6 +166,30 @@
   .switch input:checked + i { background: #34c759; }
   .switch input:checked + i::after { transform: translateX(20px); }
   .hint { font-size: 13px; color: var(--muted); margin-top: 14px; line-height: 1.45; }
+
+  /* ---------- vai a 3 ---------- */
+  :root { --gold: #ffb703; --gold-ink: #241a00; }
+  body.vai3 { background: var(--gold); color: var(--gold-ink); }
+  body.vai3 .bar .history { color: rgba(36, 26, 0, .7); }
+  body.vai3 .bar .set-label { font-size: 17px; }
+  body.vai3 .icon-btn { background: rgba(0, 0, 0, .14); }
+  body.vai3 .half {
+    box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .85);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 22px, transparent 22px 44px);
+  }
+  .splash {
+    position: fixed; inset: 0; z-index: 15; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    background: var(--gold); color: var(--gold-ink); text-align: center;
+    opacity: 0; visibility: hidden;
+  }
+  .splash.show { visibility: visible; pointer-events: auto; animation: splash 1.6s ease-in-out forwards; }
+  .splash .tie { font-size: clamp(28px, 9vmin, 56px); font-weight: 800; font-variant-numeric: tabular-nums; opacity: .75; }
+  .splash .big { font-size: clamp(56px, 20vmin, 140px); font-weight: 900; line-height: 1; letter-spacing: -.02em; }
+  .splash .sub { font-size: clamp(16px, 4.5vmin, 24px); font-weight: 600; opacity: .8; }
+  .splash.show .big { animation: pop .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+  @keyframes splash { 0% { opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+  @keyframes pop { from { transform: scale(.4); } to { transform: scale(1); } }
 
   .toast {
     position: fixed; left: 50%; top: calc(var(--safe-t) + 64px); z-index: 20;
@@ -288,6 +311,7 @@
     </div>
 
     <div class="field">
+      <div class="toggle"><span>Vai a 3 no empate (11×11 ou 24×24)</span><label class="switch"><input type="checkbox" id="optVai3"><i></i></label></div>
       <div class="toggle"><span>Vencer por 2 pontos de diferença</span><label class="switch"><input type="checkbox" id="optWinBy2"><i></i></label></div>
       <div class="toggle"><span>Trocar de lado entre os sets</span><label class="switch"><input type="checkbox" id="optAutoSwap"><i></i></label></div>
       <div class="toggle"><span>Avisar troca de lado no set decisivo</span><label class="switch"><input type="checkbox" id="optTbSwap"><i></i></label></div>
@@ -299,11 +323,17 @@
     <div class="hint">
       Toque no lado do time para marcar ponto. Para tirar um ponto, toque no <b>−</b> ou arraste para baixo no lado do time.
       A bola indica quem está sacando.
+      No empate a um ponto do fim (11×11 ou 24×24), o placar zera e quem fizer 3 primeiro ganha o set.
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="splash" id="splash" aria-live="polite">
+  <div class="tie" id="splashTie">11 × 11</div>
+  <div class="big">VAI A 3!</div>
+  <div class="sub">Quem fizer 3 primeiro ganha o set</div>
+</div>
 
 <script>
 (() => {
@@ -315,7 +345,7 @@
       names: ['Time A', 'Time B'],
       colors: ['#e63946', '#1d70e0'],
       bestOf: 5, points: 12, tiebreak: 0,  // tiebreak 0 = mesmo número de pontos dos outros sets
-      winBy2: true, autoSwap: true, tbSwap: true,
+      vai3: true, winBy2: true, autoSwap: true, tbSwap: true,
     },
     game: newGame(),
   });
@@ -326,6 +356,7 @@
       serve: null, firstServe: null, swapped: false,
       pending: null,   // 'set' | 'match' quando o set acabou e espera confirmação
       tbSwapDone: false,
+      vai3: null,      // placar do empate (ex.: [11, 11]) quando está no "vai a 3"
     };
   }
 
@@ -359,8 +390,10 @@
     return state.config.bestOf > 1 && state.game.sets[0] === n - 1 && state.game.sets[1] === n - 1;
   }
   const target = () => (isDecidingSet() && state.config.tiebreak) || state.config.points;
+  const VAI3 = 3;
   function setWinner() {
     const [a, b] = state.game.score;
+    if (state.game.vai3) return a >= VAI3 ? 0 : b >= VAI3 ? 1 : null;
     const t = target();
     const lead = state.config.winBy2 ? 2 : 1;
     if (a >= t && a - b >= lead) return 0;
@@ -384,7 +417,14 @@
     const w = setWinner();
     if (w !== null) {
       g.pending = (g.sets[w] + 1 >= setsToWin()) ? 'match' : 'set';
-    } else if (isDecidingSet() && state.config.tbSwap && !g.tbSwapDone) {
+    } else if (!g.vai3 && state.config.vai3 && g.score[0] === target() - 1 && g.score[1] === target() - 1) {
+      g.vai3 = [...g.score];
+      g.score = [0, 0];
+      save();
+      render();
+      splash();
+      return;
+    } else if (!g.vai3 && isDecidingSet() && state.config.tbSwap && !g.tbSwapDone) {
       const half = Math.ceil(target() / 2);
       if (g.score[team] === half && g.score[1 - team] < half) {
         g.tbSwapDone = true;
@@ -421,9 +461,10 @@
       // começar partida nova mantendo times e regras
       state.game = newGame();
     } else {
-      g.history.push([g.score[0], g.score[1]]);
+      g.history.push(g.vai3 ? [...g.vai3, [...g.score]] : [...g.score]);
       g.sets[w]++;
       g.score = [0, 0];
+      g.vai3 = null;
       g.pending = null;
       g.tbSwapDone = false;
       // saque inicial alterna a cada set
@@ -439,8 +480,13 @@
   const $ = (s) => document.querySelector(s);
   const halves = [...document.querySelectorAll('.half')];
 
+  // set normal: "25–23"; set decidido no vai a 3: "11–11 (3–1)"
+  const fmtSet = ([a, b, v]) => v ? `${a}–${b} (${v[0]}–${v[1]})` : `${a}–${b}`;
+  const currentSet = (g) => g.vai3 ? [...g.vai3, [...g.score]] : [...g.score];
+
   function render(scoredTeam) {
     const { config: c, game: g } = state;
+    document.body.classList.toggle('vai3', !!g.vai3);
     document.documentElement.style.setProperty('--a', c.colors[0]);
     document.documentElement.style.setProperty('--b', c.colors[1]);
 
@@ -468,10 +514,10 @@
     });
 
     const setNum = g.history.length + 1;
-    $('#setLabel').textContent = c.bestOf === 1 ? `${target()} pontos`
+    $('#setLabel').textContent = g.vai3 ? 'Vai a 3' : c.bestOf === 1 ? `${target()} pontos`
       : isDecidingSet() ? `Set ${setNum} · Tie-break` : `Set ${setNum} de ${c.bestOf}`;
-    $('#history').textContent = g.history.length
-      ? g.history.map(([a, b]) => `${a}–${b}`).join('  ·  ')
+    $('#history').textContent = g.vai3 ? `Empate ${g.vai3[0]} × ${g.vai3[1]} · até 3`
+      : g.history.length ? g.history.map(fmtSet).join('  ·  ')
       : `${c.points} pts · ${c.winBy2 ? 'vence por 2' : 'sem vantagem'}`;
     $('#btnUndo').disabled = undoStack.length === 0;
 
@@ -490,17 +536,32 @@
       $('#endTitle').textContent = '🏆 Fim de jogo!';
       $('#endText').textContent = `${c.names[w]} venceu a partida.`;
       $('#endScore').textContent = c.bestOf > 1 ? `${finalSets[0]} × ${finalSets[1]}` : `${a} × ${b}`;
-      $('#endSummary').textContent = c.bestOf > 1 ? [...g.history, [a, b]].map(([x, y]) => `${x}–${y}`).join('  ·  ') : '';
+      $('#endSummary').textContent = c.bestOf > 1 || g.vai3 ? [...g.history, currentSet(g)].map(fmtSet).join('  ·  ') : '';
       $('#endNext').textContent = 'Nova partida';
     } else {
       $('#endTitle').textContent = `Fim do ${g.history.length + 1}º set`;
-      $('#endText').textContent = `${c.names[w]} venceu o set.`;
+      $('#endText').textContent = g.vai3
+        ? `${c.names[w]} venceu o vai a 3 (empate em ${g.vai3[0]} × ${g.vai3[1]}).`
+        : `${c.names[w]} venceu o set.`;
       $('#endScore').textContent = `${a} × ${b}`;
       $('#endSummary').textContent = '';
       $('#endNext').textContent = 'Próximo set';
     }
     modal.classList.add('open');
   }
+
+  function splash() {
+    const el = $('#splash');
+    $('#splashTie').textContent = `${state.game.vai3[0]} × ${state.game.vai3[1]}`;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  }
+  // enquanto o aviso aparece, um toque só fecha o aviso (não marca ponto escondido)
+  $('#splash').addEventListener('pointerdown', (e) => { e.preventDefault(); $('#splash').classList.remove('show'); });
+  $('#splash').addEventListener('animationend', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+  });
 
   let toastTimer;
   function toast(msg) {
@@ -614,7 +675,7 @@
   const painters = [
     bindTeam(0), bindTeam(1),
     bindSeg('#segBestOf', 'bestOf'), bindSeg('#segPoints', 'points'), bindSeg('#segTiebreak', 'tiebreak'),
-    bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
+    bindToggle('#optVai3', 'vai3'), bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
   ];
   $('#btnSettings').addEventListener('click', () => {
     painters.forEach((p) => p());
