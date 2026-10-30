@@ -9,14 +9,16 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
 - **Tirar ponto:** toque no **−** ou arraste o dedo para baixo no lado do time.
 - **↶** desfaz a última ação (pontos, fim de set, zerar partida).
 - **⇄** troca os times de lado.
-- **⟲** começa uma nova partida: você escolhe o **nome dos times** e se o set
-  vai até **12 pontos** (padrão) ou **25 pontos**. Essa tela aparece sozinha
-  na primeira vez que abre o app.
+- **Padrão: 1 set de 12 pontos.** Quem fizer 12 primeiro ganha a partida.
+- Quando a partida acaba, toque em **Próxima partida**: o app mostra quem
+  venceu e pede para confirmar os nomes. Troque o time que sai pelo que entra
+  e toque em **Começar partida**.
+- **⟲** começa uma nova partida a qualquer momento (pede para confirmar os nomes).
 - **⚙** ajustes: nome e cor dos times, melhor de 1/3/5 sets, pontos por set
-  (12/25), pontos do set decisivo (igual aos outros ou 15), vencer por 2,
-  troca de lado automática.
+  (12/25), pontos do set decisivo (igual aos outros ou 15), vai a 3, vencer
+  por 2, troca de lado automática.
 - A **bola** mostra quem está sacando (o time que fez o último ponto).
-- As **bolinhas** embaixo mostram os sets ganhos.
+- As **bolinhas** embaixo mostram os sets ganhos (quando joga mais de 1 set).
 - **Vai a 3:** no empate a um ponto do fim (11 × 11 no set de 12, 24 × 24 no
   de 25), a tela fica dourada, o placar zera e quem fizer 3 primeiro ganha o
   set. Dá para desligar em ⚙ Ajustes.

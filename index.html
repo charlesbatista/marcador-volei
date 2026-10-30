@@ -156,6 +156,11 @@
   .btn:active { transform: scale(.98); }
 
   .field { margin-bottom: 16px; }
+  .new-result { background: var(--bg); border-radius: 14px; padding: 14px; margin-bottom: 16px; text-align: center; }
+  .new-result b { display: block; font-size: 19px; }
+  .new-result span { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rules-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; color: var(--muted); }
+  .link-btn { color: #6cb4ff; font-weight: 600; padding: 8px 0; }
   .field > label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
   .team-row { display: flex; gap: 8px; align-items: center; }
   .team-row + .team-row { margin-top: 8px; }
@@ -268,18 +273,17 @@
 <!-- Confirmar nova partida -->
 <div class="overlay" id="newModal">
   <div class="sheet">
-    <h2>Nova partida</h2>
+    <h2 id="newTitle">Nova partida</h2>
     <p id="newWarn">O placar atual será zerado.</p>
+    <div class="new-result" id="newResult" hidden></div>
     <div class="field">
       <label>Nomes dos times</label>
       <div class="team-row"><input type="text" id="newName0" maxlength="20" autocomplete="off" enterkeyhint="next" placeholder="Time A"></div>
       <div class="team-row"><input type="text" id="newName1" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="Time B"></div>
     </div>
-    <div class="field">
-      <label>Pontos por set</label>
-      <div class="seg" id="newPoints">
-        <button data-v="12">12 pontos</button><button data-v="25">25 pontos</button>
-      </div>
+    <div class="rules-line">
+      <span id="newRules">12 pontos · 1 set</span>
+      <button class="link-btn" id="newRulesEdit">Alterar regras</button>
     </div>
     <div class="actions">
       <button class="btn" id="newYes">Começar partida</button>
@@ -357,7 +361,8 @@
     config: {
       names: ['Time A', 'Time B'],
       colors: ['#e63946', '#1d70e0'],
-      bestOf: 5, points: 12, tiebreak: 0,  // tiebreak 0 = mesmo número de pontos dos outros sets
+      v: 2,  // versão dos padrões
+      bestOf: 1, points: 12, tiebreak: 0,  // tiebreak 0 = mesmo número de pontos dos outros sets
       vai3: true, winBy2: true, autoSwap: true, tbSwap: true,
     },
     game: newGame(),
@@ -384,6 +389,10 @@
         const saved = JSON.parse(raw);
         const d = defaults();
         const config = { ...d.config, ...saved.config };
+        // padrões novos: partida de 1 set de 12 pontos
+        if (saved.config && saved.config.v !== d.config.v) {
+          config.v = d.config.v; config.bestOf = 1; config.points = 12;
+        }
         if (![12, 25].includes(config.points)) config.points = d.config.points;
         if (![0, 15].includes(config.tiebreak)) config.tiebreak = d.config.tiebreak;
         return { config, game: { ...d.game, ...saved.game } };
@@ -532,7 +541,7 @@
       : isDecidingSet() ? `Set ${setNum} · Tie-break` : `Set ${setNum} de ${c.bestOf}`;
     $('#history').textContent = g.vai3 ? `Empate ${g.vai3[0]} × ${g.vai3[1]} · até 3`
       : g.history.length ? g.history.map(fmtSet).join('  ·  ')
-      : `${c.points} pts · ${c.winBy2 ? 'vence por 2' : 'sem vantagem'}`;
+      : `${target()} pts · ${c.vai3 ? `vai a 3 no ${target() - 1}×${target() - 1}` : c.winBy2 ? 'vence por 2' : 'sem vantagem'}`;
     $('#btnUndo').disabled = undoStack.length === 0;
 
     renderEndModal();
@@ -551,7 +560,7 @@
       $('#endText').textContent = `${c.names[w]} venceu a partida.`;
       $('#endScore').textContent = c.bestOf > 1 ? `${finalSets[0]} × ${finalSets[1]}` : `${a} × ${b}`;
       $('#endSummary').textContent = c.bestOf > 1 || g.vai3 ? [...g.history, currentSet(g)].map(fmtSet).join('  ·  ') : '';
-      $('#endNext').textContent = 'Nova partida';
+      $('#endNext').textContent = 'Próxima partida';
     } else {
       $('#endTitle').textContent = `Fim do ${g.history.length + 1}º set`;
       $('#endText').textContent = g.vai3
@@ -607,42 +616,73 @@
   $('#btnUndo').addEventListener('click', undo);
   $('#btnSwap').addEventListener('click', () => { state.game.swapped = !state.game.swapped; save(); render(); });
   // ---------- nova partida ----------
-  let newPoints;
-  const paintNewPoints = () => document.querySelectorAll('#newPoints button').forEach((b) =>
-    b.classList.toggle('sel', +b.dataset.v === newPoints));
-  $('#newPoints').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    newPoints = +b.dataset.v; paintNewPoints();
-  });
+  const rulesText = () => {
+    const c = state.config;
+    return `${c.points} pontos · ${c.bestOf === 1 ? '1 set' : `melhor de ${c.bestOf} sets`}`;
+  };
+  // ao tocar no nome, seleciona tudo para já digitar o time que entra
+  ['#newName0', '#newName1'].forEach((id) =>
+    $(id).addEventListener('focus', (e) => setTimeout(() => e.target.select(), 0)));
   $('#newName0').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#newName1').focus(); });
   $('#newName1').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
   function openNewMatch() {
-    const g = state.game;
+    const { config: c, game: g } = state;
     const started = g.score[0] + g.score[1] + g.history.length > 0;
-    $('#newWarn').textContent = started ? 'O placar atual será zerado.' : 'Escolha os times e quantos pontos tem cada set.';
-    $('#newName0').value = state.config.names[0];
-    $('#newName1').value = state.config.names[1];
-    newPoints = state.config.points;
-    paintNewPoints();
+    const finished = g.pending === 'match' && setWinner() !== null;
+    const result = $('#newResult');
+    result.hidden = !finished;
+    if (finished) {
+      const w = setWinner();
+      const sets = [...g.sets]; sets[w]++;
+      result.innerHTML = '';
+      const name = document.createElement('b');
+      name.textContent = `🏆 ${c.names[w]} venceu`;
+      const score = document.createElement('span');
+      score.textContent = c.bestOf > 1 ? `${sets[0]} × ${sets[1]} em sets` : `${g.score[0]} × ${g.score[1]}${g.vai3 ? ` no vai a 3 (${g.vai3[0]} × ${g.vai3[1]})` : ''}`;
+      result.append(name, score);
+    }
+    $('#newTitle').textContent = finished ? 'Próxima partida' : 'Nova partida';
+    $('#newWarn').textContent = finished ? 'Confira os nomes: troque o time que sai pelo que entra.'
+      : started ? 'O placar atual será zerado.' : 'Confira os nomes dos times.';
+    $('#newName0').value = c.names[0];
+    $('#newName1').value = c.names[1];
+    $('#newRules').textContent = rulesText();
     $('#newModal').classList.add('open');
   }
   $('#btnNew').addEventListener('click', openNewMatch);
+  let backToNewMatch = false;
+  $('#newRulesEdit').addEventListener('click', () => {
+    backToNewMatch = true;
+    $('#newModal').classList.remove('open');
+    openSettings();
+  });
   $('#newYes').addEventListener('click', () => {
-    const started = state.game.score[0] + state.game.score[1] + state.game.history.length > 0;
+    const started = state.game.score[0] + state.game.score[1] + state.game.history.length > 0
+      && state.game.pending !== 'match';
     snapshot();
     state.config.names = [$('#newName0').value.trim() || 'Time A', $('#newName1').value.trim() || 'Time B'];
-    state.config.points = newPoints;
     state.game = newGame();
     save(); render();
     $('#newModal').classList.remove('open');
     if (started) toast('Partida zerada · use ↶ para desfazer');
   });
-  $('#endNext').addEventListener('click', confirmSetEnd);
+  // fim da partida: vai direto para a próxima, confirmando os nomes
+  $('#endNext').addEventListener('click', () => {
+    if (state.game.pending === 'match') {
+      $('#endModal').classList.remove('open');
+      openNewMatch();
+    } else confirmSetEnd();
+  });
   $('#endUndo').addEventListener('click', undo);
+  function closeOverlay(o) {
+    o.classList.remove('open');
+    if (o.id === 'settingsModal' && backToNewMatch) { backToNewMatch = false; openNewMatch(); }
+    else if (o.id === 'newModal') render();  // se a partida tinha acabado, volta o aviso de fim
+  }
   document.querySelectorAll('[data-close]').forEach((b) =>
-    b.addEventListener('click', () => b.closest('.overlay').classList.remove('open')));
+    b.addEventListener('click', () => closeOverlay(b.closest('.overlay'))));
   document.querySelectorAll('#newModal, #settingsModal').forEach((o) =>
-    o.addEventListener('click', (e) => { if (e.target === o) o.classList.remove('open'); }));
+    o.addEventListener('click', (e) => { if (e.target === o) closeOverlay(o); }));
 
   // ---------- ajustes ----------
   function bindSeg(id, key) {
@@ -691,10 +731,11 @@
     bindSeg('#segBestOf', 'bestOf'), bindSeg('#segPoints', 'points'), bindSeg('#segTiebreak', 'tiebreak'),
     bindToggle('#optVai3', 'vai3'), bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
   ];
-  $('#btnSettings').addEventListener('click', () => {
+  function openSettings() {
     painters.forEach((p) => p());
     $('#settingsModal').classList.add('open');
-  });
+  }
+  $('#btnSettings').addEventListener('click', openSettings);
 
   // ---------- altura da tela no app da Tela de Início ----------
   const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
