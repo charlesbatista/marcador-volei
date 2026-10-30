@@ -232,10 +232,21 @@
 <!-- Confirmar nova partida -->
 <div class="overlay" id="newModal">
   <div class="sheet">
-    <h2>Nova partida?</h2>
-    <p>O placar atual será zerado.</p>
+    <h2>Nova partida</h2>
+    <p id="newWarn">O placar atual será zerado.</p>
+    <div class="field">
+      <label>Nomes dos times</label>
+      <div class="team-row"><input type="text" id="newName0" maxlength="20" autocomplete="off" enterkeyhint="next" placeholder="Time A"></div>
+      <div class="team-row"><input type="text" id="newName1" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="Time B"></div>
+    </div>
+    <div class="field">
+      <label>Pontos por set</label>
+      <div class="seg" id="newPoints">
+        <button data-v="12">12 pontos</button><button data-v="25">25 pontos</button>
+      </div>
+    </div>
     <div class="actions">
-      <button class="btn" id="newYes">Zerar e começar</button>
+      <button class="btn" id="newYes">Começar partida</button>
       <button class="btn secondary" data-close>Cancelar</button>
     </div>
   </div>
@@ -265,21 +276,21 @@
     <div class="field">
       <label>Pontos por set</label>
       <div class="seg" id="segPoints">
-        <button data-v="15">15</button><button data-v="21">21</button><button data-v="25">25</button>
+        <button data-v="12">12</button><button data-v="25">25</button>
       </div>
     </div>
 
     <div class="field">
-      <label>Pontos no tie-break (set decisivo)</label>
+      <label>Pontos no set decisivo (tie-break)</label>
       <div class="seg" id="segTiebreak">
-        <button data-v="15">15</button><button data-v="21">21</button><button data-v="25">25</button>
+        <button data-v="0">Igual aos outros</button><button data-v="15">15</button>
       </div>
     </div>
 
     <div class="field">
       <div class="toggle"><span>Vencer por 2 pontos de diferença</span><label class="switch"><input type="checkbox" id="optWinBy2"><i></i></label></div>
       <div class="toggle"><span>Trocar de lado entre os sets</span><label class="switch"><input type="checkbox" id="optAutoSwap"><i></i></label></div>
-      <div class="toggle"><span>Avisar troca de lado no tie-break</span><label class="switch"><input type="checkbox" id="optTbSwap"><i></i></label></div>
+      <div class="toggle"><span>Avisar troca de lado no set decisivo</span><label class="switch"><input type="checkbox" id="optTbSwap"><i></i></label></div>
     </div>
 
     <div class="actions">
@@ -303,7 +314,7 @@
     config: {
       names: ['Time A', 'Time B'],
       colors: ['#e63946', '#1d70e0'],
-      bestOf: 5, points: 25, tiebreak: 15,
+      bestOf: 5, points: 12, tiebreak: 0,  // tiebreak 0 = mesmo número de pontos dos outros sets
       winBy2: true, autoSwap: true, tbSwap: true,
     },
     game: newGame(),
@@ -318,6 +329,7 @@
     };
   }
 
+  let firstRun = false;
   let state = load();
   let undoStack = [];
 
@@ -327,9 +339,13 @@
       if (raw) {
         const saved = JSON.parse(raw);
         const d = defaults();
-        return { config: { ...d.config, ...saved.config }, game: { ...d.game, ...saved.game } };
+        const config = { ...d.config, ...saved.config };
+        if (![12, 25].includes(config.points)) config.points = d.config.points;
+        if (![0, 15].includes(config.tiebreak)) config.tiebreak = d.config.tiebreak;
+        return { config, game: { ...d.game, ...saved.game } };
       }
     } catch (e) {}
+    firstRun = true;
     return defaults();
   }
   function save() {
@@ -342,7 +358,7 @@
     const n = setsToWin();
     return state.config.bestOf > 1 && state.game.sets[0] === n - 1 && state.game.sets[1] === n - 1;
   }
-  const target = () => isDecidingSet() ? state.config.tiebreak : state.config.points;
+  const target = () => (isDecidingSet() && state.config.tiebreak) || state.config.points;
   function setWinner() {
     const [a, b] = state.game.score;
     const t = target();
@@ -369,7 +385,7 @@
     if (w !== null) {
       g.pending = (g.sets[w] + 1 >= setsToWin()) ? 'match' : 'set';
     } else if (isDecidingSet() && state.config.tbSwap && !g.tbSwapDone) {
-      const half = Math.ceil(state.config.tiebreak / 2);
+      const half = Math.ceil(target() / 2);
       if (g.score[team] === half && g.score[1 - team] < half) {
         g.tbSwapDone = true;
         if (state.config.autoSwap) g.swapped = !g.swapped;
@@ -515,13 +531,36 @@
 
   $('#btnUndo').addEventListener('click', undo);
   $('#btnSwap').addEventListener('click', () => { state.game.swapped = !state.game.swapped; save(); render(); });
-  $('#btnNew').addEventListener('click', () => $('#newModal').classList.add('open'));
+  // ---------- nova partida ----------
+  let newPoints;
+  const paintNewPoints = () => document.querySelectorAll('#newPoints button').forEach((b) =>
+    b.classList.toggle('sel', +b.dataset.v === newPoints));
+  $('#newPoints').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    newPoints = +b.dataset.v; paintNewPoints();
+  });
+  $('#newName0').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#newName1').focus(); });
+  $('#newName1').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+  function openNewMatch() {
+    const g = state.game;
+    const started = g.score[0] + g.score[1] + g.history.length > 0;
+    $('#newWarn').textContent = started ? 'O placar atual será zerado.' : 'Escolha os times e quantos pontos tem cada set.';
+    $('#newName0').value = state.config.names[0];
+    $('#newName1').value = state.config.names[1];
+    newPoints = state.config.points;
+    paintNewPoints();
+    $('#newModal').classList.add('open');
+  }
+  $('#btnNew').addEventListener('click', openNewMatch);
   $('#newYes').addEventListener('click', () => {
+    const started = state.game.score[0] + state.game.score[1] + state.game.history.length > 0;
     snapshot();
+    state.config.names = [$('#newName0').value.trim() || 'Time A', $('#newName1').value.trim() || 'Time B'];
+    state.config.points = newPoints;
     state.game = newGame();
     save(); render();
     $('#newModal').classList.remove('open');
-    toast('Partida zerada · use ↶ para desfazer');
+    if (started) toast('Partida zerada · use ↶ para desfazer');
   });
   $('#endNext').addEventListener('click', confirmSetEnd);
   $('#endUndo').addEventListener('click', undo);
@@ -616,6 +655,7 @@
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   render();
+  if (firstRun) openNewMatch();
 })();
 </script>
 </body>
