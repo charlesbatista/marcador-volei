@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Marcador de Vôlei</title>
 <meta name="description" content="Placar de vôlei simples para o celular">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#0f1115" id="themeColor">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<!-- Sem apple-mobile-web-app-status-bar-style de propósito: no iOS 26+ qualquer estilo
+     deixa um degradê sobre o topo do app. Sem ele, o app começa abaixo da barra de status. -->
 <meta name="apple-mobile-web-app-title" content="Vôlei">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -487,6 +488,7 @@
   function render(scoredTeam) {
     const { config: c, game: g } = state;
     document.body.classList.toggle('vai3', !!g.vai3);
+    $('#themeColor').setAttribute('content', g.vai3 ? '#ffb703' : '#0f1115');
     document.documentElement.style.setProperty('--a', c.colors[0]);
     document.documentElement.style.setProperty('--b', c.colors[1]);
 
