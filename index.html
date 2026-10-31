@@ -126,6 +126,17 @@
     transition: opacity .2s, transform .35s cubic-bezier(.2, 1.7, .4, 1);
   }
   .serve.on { opacity: 1; transform: scale(1); }
+  /* seta do lado da quadra: só em pé, quando os times ficam um em cima do outro */
+  .side-arrow {
+    position: absolute; top: 10px; left: 14px; width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(0, 0, 0, .2); display: none; place-items: center; pointer-events: none;
+  }
+  .side-arrow svg {
+    width: 24px; height: 24px; stroke: #fff; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform .4s ease;
+  }
+  .side-arrow.right svg { transform: rotate(180deg); }
+  @media (orientation: portrait) { .side-arrow { display: grid; } }
   .team-name { left: 60px; right: 60px; }
 
   /* ---------- modais ---------- */
@@ -276,6 +287,7 @@
 <main class="court" id="court">
   <section class="half" data-team="0">
     <div class="team-name"></div>
+    <div class="side-arrow" role="img"><svg viewBox="0 0 24 24"><path d="M20 12H4"/><path d="M10 6l-6 6 6 6"/></svg></div>
     <svg class="serve" viewBox="0 0 64 64" role="img" aria-label="Saque"><use href="#volleyBall"/></svg>
     <div class="score">0</div>
     <div class="sets"></div>
@@ -283,6 +295,7 @@
   </section>
   <section class="half" data-team="1">
     <div class="team-name"></div>
+    <div class="side-arrow" role="img"><svg viewBox="0 0 24 24"><path d="M20 12H4"/><path d="M10 6l-6 6 6 6"/></svg></div>
     <svg class="serve" viewBox="0 0 64 64" role="img" aria-label="Saque"><use href="#volleyBall"/></svg>
     <div class="score">0</div>
     <div class="sets"></div>
@@ -373,7 +386,8 @@
     </div>
     <div class="hint">
       Toque no lado do time para marcar ponto. Para tirar um ponto, toque no <b>−</b> ou arraste para baixo no lado do time.
-      A bola indica quem está sacando.
+      A bola indica quem está sacando. Em pé, as setas mostram o lado da quadra de cada time
+      (para quem está de frente para a quadra): o de cima fica à esquerda e o de baixo, à direita.
       No empate a um ponto do fim (11×11 ou 24×24), o placar zera e quem fizer 3 primeiro ganha o set.
     </div>
   </div>
@@ -553,6 +567,11 @@
       el.querySelector('.team-name').textContent = c.names[t];
       el.querySelector('.score').textContent = g.score[t];
       el.querySelector('.serve').classList.toggle('on', g.serve === t);
+      // em pé, quem está em cima fica do lado esquerdo da quadra e quem está embaixo, do direito
+      const arrow = el.querySelector('.side-arrow');
+      const right = (g.swapped ? 1 - t : t) === 1;
+      arrow.classList.toggle('right', right);
+      arrow.setAttribute('aria-label', right ? 'Lado direito da quadra' : 'Lado esquerdo da quadra');
       const dots = el.querySelector('.sets');
       dots.innerHTML = '';
       if (c.bestOf > 1) {

@@ -18,6 +18,9 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
   (12/25), pontos do set decisivo (igual aos outros ou 15), vai a 3, vencer
   por 2, troca de lado automática.
 - A **bola** mostra quem está sacando (o time que fez o último ponto).
+- **Setas (com o celular em pé):** mostram o lado da quadra de cada time para
+  quem está de frente para a quadra: ← o time de cima está à esquerda, → o de
+  baixo está à direita. Ao trocar de lado (⇄), as setas giram junto.
 - As **bolinhas** embaixo mostram os sets ganhos (quando joga mais de 1 set).
 - **Vai a 3:** no empate a um ponto do fim (11 × 11 no set de 12, 24 × 24 no
   de 25), a tela fica dourada, o placar zera e quem fizer 3 primeiro ganha o
