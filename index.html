@@ -38,9 +38,12 @@
     overscroll-behavior: none;
   }
   body { display: flex; flex-direction: column; touch-action: manipulation; transition: background-color .6s, color .6s; }
-  /* No app da Tela de Início o iOS às vezes calcula a altura da tela menor que a real
-     (sobra uma faixa vazia embaixo). O script mede a altura certa e põe em --app-h. */
-  body { position: fixed; top: 0; left: 0; right: 0; height: var(--app-h, 100%); }
+  /* O app ocupa sempre a tela atual (presa nos quatro cantos). Não usar height: 100% aqui:
+     depois de girar, o iPhone pode manter a medida antiga, e aí os toques caem fora dos botões. */
+  body { position: fixed; top: 0; right: 0; bottom: 0; left: 0; height: auto; }
+  /* No app da Tela de Início o iOS às vezes informa a altura da tela sem a barra de status
+     (sobra uma faixa vazia embaixo). Nesse caso o script põe a altura certa em --app-h. */
+  :root.tall body { bottom: auto; height: var(--app-h); }
   /* No iOS 26+ o sistema desenha um degradê logo abaixo da barra de status, por cima do app.
      Quando o app fica por trás da barra de status (inset do topo > 0), desce o conteúdo
      para fora do degradê. Se o app já começa abaixo da barra (inset 0), não muda nada. */
@@ -863,27 +866,58 @@
   }
   tickClock();
 
-  // ---------- altura da tela no app da Tela de Início ----------
+  // ---------- tela do app da Tela de Início ----------
   const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   function fitScreen() {
     const root = document.documentElement;
     const portrait = innerHeight > innerWidth;
     root.toggleAttribute('data-standalone', standalone);
     root.toggleAttribute('data-portrait', portrait);
-    root.style.removeProperty('--app-h');
-    if (!standalone || !portrait) return;
-    const safeTop = parseFloat(getComputedStyle($('#safeProbe')).paddingTop) || 0;
-    const h = Math.max(root.clientHeight, innerHeight);
-    // Bug do iOS: o app começa no topo da tela (por trás da barra de status), mas a
-    // altura informada desconta a barra. Nesse caso, a altura real é a da tela toda.
-    if (safeTop > 0 && h < screen.height && h + safeTop <= screen.height + 2) {
-      root.style.setProperty('--app-h', `${h + safeTop}px`);
+    // Bug do iOS: o app começa no topo da tela (por trás da barra de status), mas a altura
+    // informada desconta exatamente a barra. Só nesse caso usa a altura da tela inteira
+    // (uma medida velha, no meio de uma rotação, não bate e é ignorada).
+    let tall = false;
+    if (standalone && portrait) {
+      const safeTop = parseFloat(getComputedStyle($('#safeProbe')).paddingTop) || 0;
+      tall = safeTop > 0 && Math.abs(innerHeight + safeTop - screen.height) <= 2;
+    }
+    root.classList.toggle('tall', tall);
+    if (tall) root.style.setProperty('--app-h', `${screen.height}px`);
+    else root.style.removeProperty('--app-h');
+  }
+
+  // Depois de girar, o iPhone às vezes deixa a página deslocada ou com zoom: os botões
+  // aparecem num lugar e o toque cai em outro. Quando a rotação termina, recoloca no lugar.
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  function resetViewport() {
+    const root = document.documentElement, vv = window.visualViewport;
+    if (root.scrollTop || root.scrollLeft || document.body.scrollTop || scrollX || scrollY
+      || (vv && (vv.offsetTop || vv.offsetLeft))) {
+      root.scrollTop = 0; root.scrollLeft = 0; document.body.scrollTop = 0;
+      scrollTo(0, 0);
+    }
+    if (vv && Math.abs(vv.scale - 1) > 0.01) {
+      // reaplicar a meta viewport faz o iOS voltar ao zoom normal
+      const content = viewportMeta.content;
+      viewportMeta.content = content.replace('initial-scale=1', 'initial-scale=1.0');
+      requestAnimationFrame(() => { viewportMeta.content = content; });
     }
   }
+  let settleTimers = [];
+  function afterRotation() {
+    // o iPhone informa o tamanho novo aos poucos; confere de novo até a rotação assentar
+    settleTimers.forEach(clearTimeout);
+    settleTimers = [100, 350, 700].map((ms) => setTimeout(() => { fitScreen(); resetViewport(); }, ms));
+  }
+  let wasPortrait = innerHeight > innerWidth;
   fitScreen();
-  addEventListener('resize', fitScreen);
-  addEventListener('orientationchange', () => setTimeout(fitScreen, 300));
-  addEventListener('pageshow', fitScreen);
+  addEventListener('resize', () => {
+    fitScreen();
+    const portrait = innerHeight > innerWidth;
+    if (portrait !== wasPortrait) { wasPortrait = portrait; afterRotation(); }
+  });
+  addEventListener('orientationchange', afterRotation);
+  addEventListener('pageshow', () => { fitScreen(); resetViewport(); });
 
   // ---------- manter a tela ligada ----------
   let wakeLock = null;
