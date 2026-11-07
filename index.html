@@ -417,6 +417,7 @@
     </div>
 
     <div class="field">
+      <div class="toggle"><span>Placar falado (fala o placar a cada ponto)</span><label class="switch"><input type="checkbox" id="optSpeak"><i></i></label></div>
       <div class="toggle"><span>Vai a 3 no empate (11×11 ou 24×24)</span><label class="switch"><input type="checkbox" id="optVai3"><i></i></label></div>
       <div class="toggle"><span>Vencer por 2 pontos de diferença</span><label class="switch"><input type="checkbox" id="optWinBy2"><i></i></label></div>
       <div class="toggle"><span>Trocar de lado entre os sets</span><label class="switch"><input type="checkbox" id="optAutoSwap"><i></i></label></div>
@@ -430,6 +431,7 @@
       Toque no lado do time para marcar ponto. Para tirar um ponto, toque no <b>−</b> ou arraste para baixo no lado do time.
       O cadeado no topo trava os outros botões e a rotação da tela; marcar e tirar pontos continua funcionando.
       Toque nele de novo para destravar.
+      Com o placar falado ligado, o celular fala o placar a cada ponto (confira o volume e a chave de silencioso).
       A bola indica quem está sacando. Em pé, as setas mostram o lado da quadra de cada time
       (para quem está de frente para a quadra): o de cima fica à esquerda e o de baixo, à direita.
       No empate a um ponto do fim (11×11 ou 24×24), o placar zera e quem fizer 3 primeiro ganha o set.
@@ -455,7 +457,7 @@
       colors: ['#e63946', '#1d70e0'],
       v: 2,  // versão dos padrões
       bestOf: 1, points: 12, tiebreak: 0,  // tiebreak 0 = mesmo número de pontos dos outros sets
-      vai3: true, winBy2: true, autoSwap: true, tbSwap: true,
+      vai3: true, winBy2: true, autoSwap: true, tbSwap: true, speak: true,
     },
     game: newGame(),
   });
@@ -497,6 +499,49 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
   }
 
+  // ---------- placar falado ----------
+  // Usa a voz em português do próprio aparelho, então funciona sem internet.
+  const synth = window.speechSynthesis;
+  let ptVoice = null;
+  function pickVoice() {
+    const vs = synth.getVoices();
+    ptVoice = vs.find((v) => /^pt[-_]BR$/i.test(v.lang) && v.localService)
+      || vs.find((v) => /^pt[-_]BR$/i.test(v.lang)) || vs.find((v) => /^pt/i.test(v.lang)) || null;
+  }
+  if (synth) { pickVoice(); if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice); }
+  function say(text) {
+    if (!synth || !state.config.speak) return;
+    try {
+      synth.cancel();  // um ponto novo corta a fala anterior
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'pt-BR'; u.rate = 1.05;
+      if (ptVoice) u.voice = ptVoice;
+      synth.speak(u);
+    } catch (e) {}
+  }
+  // emojis sugeridos para os times e como falar cada um
+  const EMOJI_WORDS = {
+    '🦈': 'Tubarão', '🦅': 'Águia', '🦁': 'Leão', '🐯': 'Tigre', '🐺': 'Lobo', '🐻': 'Urso',
+    '🦍': 'Gorila', '🐉': 'Dragão', '🦖': 'Dinossauro', '🐔': 'Galinha', '🔥': 'Fogo', '⚡': 'Raio',
+    '🚀': 'Foguete', '👑': 'Coroa', '⭐': 'Estrela', '🌊': 'Onda', '🍕': 'Pizza', '💪': 'Força',
+  };
+  // nome sem emoji; se o nome é só um emoji, fala o que ele é
+  function spokenName(t) {
+    const name = state.config.names[t];
+    const text = name.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').trim();
+    return text || EMOJI_WORDS[[...name.trim()][0]] || (t ? 'Time B' : 'Time A');
+  }
+  // placar de quem fez o ponto primeiro, como no vôlei: "5 a 3", "7 iguais"
+  const spokenScore = (a, b) => (a === b && a > 1 ? `${a} iguais` : `${a} a ${b}`);
+  const spokenBoth = () => `${spokenName(0)} ${state.game.score[0]}, ${spokenName(1)} ${state.game.score[1]}`;
+  function announcePoint(team, extra) {
+    const g = state.game;
+    const score = spokenScore(g.score[team], g.score[1 - team]);
+    if (g.pending === 'match') say(`Fim de jogo! ${spokenName(team)} venceu${g.vai3 ? ' o vai a três' : ''}, ${score}.`);
+    else if (g.pending === 'set') say(`Fim do set! ${spokenName(team)} venceu, ${score}.`);
+    else say(`${spokenName(team)}, ${score}.${extra}`);
+  }
+
   // ---------- regras ----------
   const setsToWin = () => Math.ceil(state.config.bestOf / 2);
   function isDecidingSet() {
@@ -529,6 +574,7 @@
     if (g.firstServe === null && g.score[0] + g.score[1] === 1) g.firstServe = team;
 
     const w = setWinner();
+    let extra = '';
     if (w !== null) {
       g.pending = (g.sets[w] + 1 >= setsToWin()) ? 'match' : 'set';
     } else if (!g.vai3 && state.config.vai3 && g.score[0] === target() - 1 && g.score[1] === target() - 1) {
@@ -537,6 +583,7 @@
       save();
       render();
       splash();
+      say(`${g.vai3[0]} iguais! Vai a três!`);
       return;
     } else if (!g.vai3 && isDecidingSet() && state.config.tbSwap && !g.tbSwapDone) {
       const half = Math.ceil(target() / 2);
@@ -544,10 +591,12 @@
         g.tbSwapDone = true;
         if (state.config.autoSwap) g.swapped = !g.swapped;
         toast('Troca de lado!');
+        extra = ' Troca de lado!';
       }
     }
     save();
     render(team);
+    announcePoint(team, extra);
   }
 
   function removePoint(team) {
@@ -557,6 +606,7 @@
     g.score[team]--;
     save();
     render();
+    say(`Corrigido. ${spokenBoth()}.`);
   }
 
   function undo() {
@@ -564,6 +614,7 @@
     state.game = JSON.parse(undoStack.pop());
     save();
     render();
+    say(`Desfeito. ${spokenBoth()}.`);
   }
 
   function confirmSetEnd() {
@@ -767,6 +818,7 @@
     save(); render();
     $('#newModal').classList.remove('open');
     if (started) toast('Partida zerada · use ↶ para desfazer');
+    say(`${spokenName(0)} contra ${spokenName(1)}. Bom jogo!`);
   });
   // fim da partida: vai direto para a próxima, confirmando os nomes
   $('#endNext').addEventListener('click', () => {
@@ -831,8 +883,12 @@
   const painters = [
     bindTeam(0), bindTeam(1),
     bindSeg('#segBestOf', 'bestOf'), bindSeg('#segPoints', 'points'), bindSeg('#segTiebreak', 'tiebreak'),
-    bindToggle('#optVai3', 'vai3'), bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
+    bindToggle('#optSpeak', 'speak'), bindToggle('#optVai3', 'vai3'), bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
   ];
+  $('#optSpeak').addEventListener('change', (e) => {
+    if (e.target.checked) say('Placar falado ligado.');
+    else if (synth) synth.cancel();
+  });
   function openSettings() {
     painters.forEach((p) => p());
     paintEmojiRows();
@@ -841,7 +897,7 @@
   $('#btnSettings').addEventListener('click', openSettings);
 
   // ---------- emojis no lugar (ou na frente) do nome do time ----------
-  const EMOJIS = ['🦈', '🦅', '🦁', '🐯', '🐺', '🐻', '🦍', '🐉', '🦖', '🐔', '🔥', '⚡', '🚀', '👑', '⭐', '🌊', '🍕', '💪'];
+  const EMOJIS = Object.keys(EMOJI_WORDS);
   const LEAD_EMOJI = /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u;
   const leadEmoji = (name) => (name.match(LEAD_EMOJI) || [])[1] || null;
   // "Time A" vira só o emoji; "Tubarões" vira "🦈 Tubarões"; tocar no mesmo emoji de novo tira ele

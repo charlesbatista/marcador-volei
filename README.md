@@ -17,6 +17,9 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
 - **🔒 Cadeado:** trava os outros botões do topo (desfazer, trocar de lado,
   nova partida, ajustes) e a rotação da tela. Marcar e tirar pontos continua
   funcionando. Toque nele de novo para destravar.
+- **🔊 Placar falado:** a cada ponto o celular fala o placar, começando por quem
+  fez o ponto ("Tubarões, 5 a 3", "7 iguais"), avisa o vai a 3 e o fim de jogo.
+  Usa a voz do próprio iPhone e funciona sem internet. Liga e desliga em ⚙ Ajustes.
 - **Relógio** no topo, com segundos, no horário de Brasília.
 - **Emojis nos times:** embaixo de cada nome tem uma fileira de emojis. Tocar
   em um põe o emoji no lugar de "Time A/B" ou na frente do nome
