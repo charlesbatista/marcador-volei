@@ -57,12 +57,7 @@
     padding: calc(var(--safe-t) + var(--edge-ramp, 0px) + 6px) calc(var(--safe-r) + 10px) 6px calc(var(--safe-l) + 10px);
   }
   .bar .info { flex: 1; text-align: center; min-width: 0; }
-  .bar .clock {
-    display: flex; align-items: center; justify-content: center; gap: 5px;
-    font-weight: 800; font-size: 24px; line-height: 1.1; letter-spacing: 0; font-variant-numeric: tabular-nums;
-  }
-  .bar .clock svg { flex: none; width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  @media (max-width: 359px) { .bar .clock { font-size: 17px; } .bar .clock svg { display: none; } }
+  .bar .set-label { font-weight: 700; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; }
   .bar .history { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   .icon-btn {
     width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
@@ -70,7 +65,6 @@
   }
   .icon-btn:active { transform: scale(.94); }
   .icon-btn:disabled { opacity: .35; }
-  @media (max-width: 420px) { .bar { gap: 5px; } .icon-btn { width: 40px; } }
   .icon-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ---------- quadra ---------- */
@@ -101,7 +95,6 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     text-shadow: 0 1px 2px rgba(0,0,0,.3);
   }
-  .team-name.emoji-only { font-size: clamp(34px, 13cqmin, 56px); top: 8px; text-shadow: 0 2px 6px rgba(0,0,0,.3); }
   .score {
     font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;
     font-size: min(52cqw, 64cqh);
@@ -205,7 +198,7 @@
   :root { --gold: #ffb703; --gold-ink: #241a00; }
   body.vai3 { background: var(--gold); color: var(--gold-ink); }
   body.vai3 .bar .history { color: rgba(36, 26, 0, .7); }
-  body.vai3 .bar .history { font-weight: 700; }
+  body.vai3 .bar .set-label { font-size: 17px; }
   body.vai3 .icon-btn { background: rgba(0, 0, 0, .14); }
   body.vai3 .half {
     box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .85);
@@ -225,32 +218,11 @@
   @keyframes splash { 0% { opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
   @keyframes pop { from { transform: scale(.4); } to { transform: scale(1); } }
 
-  /* ---------- cadeado: trava os outros botões; o placar continua funcionando ---------- */
-  body.locked #btnLock { background: #fff; color: #111; }
-  body.locked .bar .icon-btn:not(#btnLock) { opacity: .3; pointer-events: none; }
-  #btnLock .closed, body.locked #btnLock .open { display: none; }
-  body.locked #btnLock .closed { display: inline; }
-  #btnLock.wiggle { animation: wiggle .5s ease; }
-  @keyframes wiggle { 20%, 60% { transform: rotate(-14deg) scale(1.1); } 40%, 80% { transform: rotate(14deg) scale(1.1); } }
-
-  /* ---------- emojis para os times ---------- */
-  .emoji-row {
-    display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  }
-  .emoji-row::-webkit-scrollbar { display: none; }
-  .emoji-row button {
-    flex: none; width: 42px; height: 42px; border-radius: 12px; font-size: 22px; line-height: 1;
-    background: var(--bg); border: 1px solid var(--line);
-  }
-  .emoji-row button.sel { background: #2a2f3a; border-color: #fff; }
-
   .toast {
     position: fixed; left: 50%; top: calc(var(--safe-t) + 64px); z-index: 20;
     transform: translate(-50%, -20px); opacity: 0; pointer-events: none;
     background: #fff; color: #111; font-weight: 700; padding: 12px 20px; border-radius: 999px;
     box-shadow: 0 8px 30px rgba(0,0,0,.35); transition: opacity .25s, transform .25s;
-    width: max-content; max-width: calc(100vw - 32px); text-align: center;
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
@@ -301,15 +273,9 @@
     <svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>
   </button>
   <div class="info">
-    <div class="clock" aria-label="Hora de Brasília">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      <span id="clock">--:--:--</span>
-    </div>
-    <div class="history" id="status">&nbsp;</div>
+    <div class="set-label" id="setLabel">Set 1</div>
+    <div class="history" id="history">&nbsp;</div>
   </div>
-  <button class="icon-btn" id="btnLock" aria-label="Travar os outros botões">
-    <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="open" d="M8 11V7a4 4 0 0 1 7.6-1.7"/><path class="closed" d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-  </button>
   <button class="icon-btn" id="btnNew" aria-label="Nova partida">
     <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
   </button>
@@ -360,9 +326,7 @@
     <div class="field">
       <label>Nomes dos times</label>
       <div class="team-row"><input type="text" id="newName0" maxlength="20" autocomplete="off" enterkeyhint="next" placeholder="Time A"></div>
-      <div class="emoji-row" data-for="newName0"></div>
-      <div class="team-row" style="margin-top:12px"><input type="text" id="newName1" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="Time B"></div>
-      <div class="emoji-row" data-for="newName1"></div>
+      <div class="team-row"><input type="text" id="newName1" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="Time B"></div>
     </div>
     <div class="rules-line">
       <span id="newRules">12 pontos · 1 set</span>
@@ -384,10 +348,8 @@
     <div class="field">
       <label>Times</label>
       <div class="team-row"><input type="text" id="name0" maxlength="20" autocomplete="off"></div>
-      <div class="emoji-row" data-for="name0"></div>
       <div class="swatches" id="sw0" style="margin:8px 0 12px"></div>
       <div class="team-row"><input type="text" id="name1" maxlength="20" autocomplete="off"></div>
-      <div class="emoji-row" data-for="name1"></div>
       <div class="swatches" id="sw1" style="margin-top:8px"></div>
     </div>
 
@@ -413,7 +375,6 @@
     </div>
 
     <div class="field">
-      <div class="toggle"><span>Placar falado (fala o placar a cada ponto)</span><label class="switch"><input type="checkbox" id="optSpeak"><i></i></label></div>
       <div class="toggle"><span>Vai a 3 no empate (11×11 ou 24×24)</span><label class="switch"><input type="checkbox" id="optVai3"><i></i></label></div>
       <div class="toggle"><span>Vencer por 2 pontos de diferença</span><label class="switch"><input type="checkbox" id="optWinBy2"><i></i></label></div>
       <div class="toggle"><span>Trocar de lado entre os sets</span><label class="switch"><input type="checkbox" id="optAutoSwap"><i></i></label></div>
@@ -425,9 +386,6 @@
     </div>
     <div class="hint">
       Toque no lado do time para marcar ponto. Para tirar um ponto, toque no <b>−</b> ou arraste para baixo no lado do time.
-      O cadeado no topo trava os outros botões; marcar e tirar pontos continua funcionando.
-      Toque nele de novo para destravar.
-      Com o placar falado ligado, o celular fala o placar a cada ponto (confira o volume e a chave de silencioso).
       A bola indica quem está sacando. Em pé, as setas mostram o lado da quadra de cada time
       (para quem está de frente para a quadra): o de cima fica à esquerda e o de baixo, à direita.
       No empate a um ponto do fim (11×11 ou 24×24), o placar zera e quem fizer 3 primeiro ganha o set.
@@ -453,7 +411,7 @@
       colors: ['#e63946', '#1d70e0'],
       v: 2,  // versão dos padrões
       bestOf: 1, points: 12, tiebreak: 0,  // tiebreak 0 = mesmo número de pontos dos outros sets
-      vai3: true, winBy2: true, autoSwap: true, tbSwap: true, speak: true,
+      vai3: true, winBy2: true, autoSwap: true, tbSwap: true,
     },
     game: newGame(),
   });
@@ -495,49 +453,6 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
   }
 
-  // ---------- placar falado ----------
-  // Usa a voz em português do próprio aparelho, então funciona sem internet.
-  const synth = window.speechSynthesis;
-  let ptVoice = null;
-  function pickVoice() {
-    const vs = synth.getVoices();
-    ptVoice = vs.find((v) => /^pt[-_]BR$/i.test(v.lang) && v.localService)
-      || vs.find((v) => /^pt[-_]BR$/i.test(v.lang)) || vs.find((v) => /^pt/i.test(v.lang)) || null;
-  }
-  if (synth) { pickVoice(); if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice); }
-  function say(text) {
-    if (!synth || !state.config.speak) return;
-    try {
-      synth.cancel();  // um ponto novo corta a fala anterior
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'pt-BR'; u.rate = 1.05;
-      if (ptVoice) u.voice = ptVoice;
-      synth.speak(u);
-    } catch (e) {}
-  }
-  // emojis sugeridos para os times e como falar cada um
-  const EMOJI_WORDS = {
-    '🦈': 'Tubarão', '🦅': 'Águia', '🦁': 'Leão', '🐯': 'Tigre', '🐺': 'Lobo', '🐻': 'Urso',
-    '🦍': 'Gorila', '🐉': 'Dragão', '🦖': 'Dinossauro', '🐔': 'Galinha', '🔥': 'Fogo', '⚡': 'Raio',
-    '🚀': 'Foguete', '👑': 'Coroa', '⭐': 'Estrela', '🌊': 'Onda', '🍕': 'Pizza', '💪': 'Força',
-  };
-  // nome sem emoji; se o nome é só um emoji, fala o que ele é
-  function spokenName(t) {
-    const name = state.config.names[t];
-    const text = name.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').trim();
-    return text || EMOJI_WORDS[[...name.trim()][0]] || (t ? 'Time B' : 'Time A');
-  }
-  // placar de quem fez o ponto primeiro, como no vôlei: "5 a 3", "7 iguais"
-  const spokenScore = (a, b) => (a === b && a > 1 ? `${a} iguais` : `${a} a ${b}`);
-  const spokenBoth = () => `${spokenName(0)} ${state.game.score[0]}, ${spokenName(1)} ${state.game.score[1]}`;
-  function announcePoint(team, extra) {
-    const g = state.game;
-    const score = spokenScore(g.score[team], g.score[1 - team]);
-    if (g.pending === 'match') say(`Fim de jogo! ${spokenName(team)} venceu${g.vai3 ? ' o vai a três' : ''}, ${score}.`);
-    else if (g.pending === 'set') say(`Fim do set! ${spokenName(team)} venceu, ${score}.`);
-    else say(`${spokenName(team)}, ${score}.${extra}`);
-  }
-
   // ---------- regras ----------
   const setsToWin = () => Math.ceil(state.config.bestOf / 2);
   function isDecidingSet() {
@@ -570,7 +485,6 @@
     if (g.firstServe === null && g.score[0] + g.score[1] === 1) g.firstServe = team;
 
     const w = setWinner();
-    let extra = '';
     if (w !== null) {
       g.pending = (g.sets[w] + 1 >= setsToWin()) ? 'match' : 'set';
     } else if (!g.vai3 && state.config.vai3 && g.score[0] === target() - 1 && g.score[1] === target() - 1) {
@@ -579,7 +493,6 @@
       save();
       render();
       splash();
-      say(`${g.vai3[0]} iguais! Vai a três!`);
       return;
     } else if (!g.vai3 && isDecidingSet() && state.config.tbSwap && !g.tbSwapDone) {
       const half = Math.ceil(target() / 2);
@@ -587,12 +500,10 @@
         g.tbSwapDone = true;
         if (state.config.autoSwap) g.swapped = !g.swapped;
         toast('Troca de lado!');
-        extra = ' Troca de lado!';
       }
     }
     save();
     render(team);
-    announcePoint(team, extra);
   }
 
   function removePoint(team) {
@@ -602,7 +513,6 @@
     g.score[team]--;
     save();
     render();
-    say(`Corrigido. ${spokenBoth()}.`);
   }
 
   function undo() {
@@ -610,7 +520,6 @@
     state.game = JSON.parse(undoStack.pop());
     save();
     render();
-    say(`Desfeito. ${spokenBoth()}.`);
   }
 
   function confirmSetEnd() {
@@ -655,10 +564,7 @@
     halves.forEach((el, t) => {
       el.style.setProperty('--team', c.colors[t]);
       el.style.order = g.swapped ? 1 - t : t;
-      const nameEl = el.querySelector('.team-name');
-      nameEl.textContent = c.names[t];
-      // nome só com emoji aparece maior
-      nameEl.classList.toggle('emoji-only', /^[\p{Extended_Pictographic}\uFE0F\u200D\s]+$/u.test(c.names[t]));
+      el.querySelector('.team-name').textContent = c.names[t];
       el.querySelector('.score').textContent = g.score[t];
       el.querySelector('.serve').classList.toggle('on', g.serve === t);
       // em pé, quem está em cima fica do lado esquerdo da quadra e quem está embaixo, do direito
@@ -684,9 +590,11 @@
     });
 
     const setNum = g.history.length + 1;
-    $('#status').textContent = g.vai3 ? `Vai a 3 · empate ${g.vai3[0]}×${g.vai3[1]}`
-      : c.bestOf === 1 ? `${target()} pontos · ${c.vai3 ? 'vai a 3' : c.winBy2 ? 'vence por 2' : 'sem vantagem'}`
-      : [isDecidingSet() ? `Set ${setNum} · tie-break` : `Set ${setNum} de ${c.bestOf}`, ...g.history.map(fmtSet)].join(' · ');
+    $('#setLabel').textContent = g.vai3 ? 'Vai a 3' : c.bestOf === 1 ? `${target()} pontos`
+      : isDecidingSet() ? `Set ${setNum} · Tie-break` : `Set ${setNum} de ${c.bestOf}`;
+    $('#history').textContent = g.vai3 ? `Empate ${g.vai3[0]} × ${g.vai3[1]} · até 3`
+      : g.history.length ? g.history.map(fmtSet).join('  ·  ')
+      : `${target()} pts · ${c.vai3 ? `vai a 3 no ${target() - 1}×${target() - 1}` : c.winBy2 ? 'vence por 2' : 'sem vantagem'}`;
     $('#btnUndo').disabled = undoStack.length === 0;
 
     renderEndModal();
@@ -792,7 +700,6 @@
     $('#newName0').value = c.names[0];
     $('#newName1').value = c.names[1];
     $('#newRules').textContent = rulesText();
-    paintEmojiRows();
     $('#newModal').classList.add('open');
   }
   $('#btnNew').addEventListener('click', openNewMatch);
@@ -811,7 +718,6 @@
     save(); render();
     $('#newModal').classList.remove('open');
     if (started) toast('Partida zerada · use ↶ para desfazer');
-    say(`${spokenName(0)} contra ${spokenName(1)}. Bom jogo!`);
   });
   // fim da partida: vai direto para a próxima, confirmando os nomes
   $('#endNext').addEventListener('click', () => {
@@ -876,77 +782,13 @@
   const painters = [
     bindTeam(0), bindTeam(1),
     bindSeg('#segBestOf', 'bestOf'), bindSeg('#segPoints', 'points'), bindSeg('#segTiebreak', 'tiebreak'),
-    bindToggle('#optSpeak', 'speak'), bindToggle('#optVai3', 'vai3'), bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
+    bindToggle('#optVai3', 'vai3'), bindToggle('#optWinBy2', 'winBy2'), bindToggle('#optAutoSwap', 'autoSwap'), bindToggle('#optTbSwap', 'tbSwap'),
   ];
-  $('#optSpeak').addEventListener('change', (e) => {
-    if (e.target.checked) say('Placar falado ligado.');
-    else if (synth) synth.cancel();
-  });
   function openSettings() {
     painters.forEach((p) => p());
-    paintEmojiRows();
     $('#settingsModal').classList.add('open');
   }
   $('#btnSettings').addEventListener('click', openSettings);
-
-  // ---------- emojis no lugar (ou na frente) do nome do time ----------
-  const EMOJIS = Object.keys(EMOJI_WORDS);
-  const LEAD_EMOJI = /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u;
-  const leadEmoji = (name) => (name.match(LEAD_EMOJI) || [])[1] || null;
-  // "Time A" vira só o emoji; "Tubarões" vira "🦈 Tubarões"; tocar no mesmo emoji de novo tira ele
-  function withEmoji(name, emo) {
-    const m = name.match(LEAD_EMOJI);
-    const rest = (m ? name.slice(m[0].length) : name).trim();
-    if (m && m[1] === emo) return rest;
-    return !rest || /^Time [AB]$/i.test(rest) ? emo : `${emo} ${rest}`;
-  }
-  document.querySelectorAll('.emoji-row').forEach((row) => {
-    const input = $('#' + row.dataset.for);
-    EMOJIS.forEach((emo) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.textContent = emo; b.setAttribute('aria-label', 'Usar ' + emo);
-      b.addEventListener('click', () => {
-        input.value = withEmoji(input.value.trim(), emo);
-        input.dispatchEvent(new Event('input'));
-      });
-      row.appendChild(b);
-    });
-    row.paint = () => {
-      const cur = leadEmoji(input.value.trim());
-      row.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.textContent === cur));
-    };
-    input.addEventListener('input', row.paint);
-  });
-  function paintEmojiRows() { document.querySelectorAll('.emoji-row').forEach((r) => r.paint()); }
-
-  // ---------- cadeado ----------
-  // Travado: no topo só o cadeado responde; o placar continua funcionando.
-  let lockHintAt = 0;
-  $('#btnLock').addEventListener('click', () => {
-    const locked = document.body.classList.toggle('locked');
-    $('#btnLock').setAttribute('aria-label', locked ? 'Destravar' : 'Travar os outros botões');
-    toast(locked ? '🔒 Travado: só o placar funciona' : '🔓 Destravado');
-  });
-  // toque em outro botão do topo com o cadeado fechado: o cadeado balança
-  $('.bar').addEventListener('pointerdown', (e) => {
-    if (!document.body.classList.contains('locked') || e.target.closest('#btnLock')) return;
-    const btn = $('#btnLock');
-    btn.classList.remove('wiggle'); void btn.offsetWidth; btn.classList.add('wiggle');
-    if (Date.now() - lockHintAt > 2500) { lockHintAt = Date.now(); toast('🔒 Toque no cadeado para destravar'); }
-  });
-
-  // ---------- relógio (horário de Brasília) ----------
-  let clockFmt;
-  try {
-    clockFmt = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
-  } catch (e) {
-    clockFmt = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
-  }
-  function tickClock() {
-    $('#clock').textContent = clockFmt.format(new Date());
-    setTimeout(tickClock, 1000 - (Date.now() % 1000));  // vira junto com o segundo
-  }
-  tickClock();
 
   // ---------- altura da tela no app da Tela de Início ----------
   const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
