@@ -14,10 +14,10 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
   venceu e pede para confirmar os nomes. Troque o time que sai pelo que entra
   e toque em **Começar partida**.
 - **⟲** começa uma nova partida a qualquer momento (pede para confirmar os nomes).
-- **🔒 Cadeado:** bloqueia a tela contra toques sem querer (celular no bolso,
-  no banco, alguém esbarrando). Bloqueado, só o cadeado responde: toque nele
-  de novo para liberar.
-- **Relógio** no topo, para saber a hora durante o jogo.
+- **🔒 Cadeado:** trava os outros botões do topo (desfazer, trocar de lado,
+  nova partida, ajustes) e a rotação da tela. Marcar e tirar pontos continua
+  funcionando. Toque nele de novo para destravar.
+- **Relógio** no topo, com segundos, no horário de Brasília.
 - **Emojis nos times:** embaixo de cada nome tem uma fileira de emojis. Tocar
   em um põe o emoji no lugar de "Time A/B" ou na frente do nome
   (ex.: 🦈 Tubarões). Tocar de novo tira.

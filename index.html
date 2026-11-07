@@ -12,6 +12,7 @@
      deixa um degradê sobre o topo do app. Sem ele, o app começa abaixo da barra de status. -->
 <meta name="apple-mobile-web-app-title" content="Vôlei">
 <link rel="manifest" href="manifest.webmanifest">
+<script>document.documentElement.dataset.layout = innerHeight >= innerWidth ? 'portrait' : 'landscape';</script>
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
@@ -44,7 +45,10 @@
   /* No iOS 26+ o sistema desenha um degradê logo abaixo da barra de status, por cima do app.
      Quando o app fica por trás da barra de status (inset do topo > 0), desce o conteúdo
      para fora do degradê. Se o app já começa abaixo da barra (inset 0), não muda nada. */
-  .safe-probe { position: absolute; visibility: hidden; pointer-events: none; padding-top: env(safe-area-inset-top, 0px); }
+  .safe-probe {
+    position: absolute; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
   @media (display-mode: standalone) and (orientation: portrait) {
     :root { --edge-ramp: min(var(--safe-t), 44px); }
   }
@@ -57,7 +61,12 @@
     padding: calc(var(--safe-t) + var(--edge-ramp, 0px) + 6px) calc(var(--safe-r) + 10px) 6px calc(var(--safe-l) + 10px);
   }
   .bar .info { flex: 1; text-align: center; min-width: 0; }
-  .bar .clock { font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+  .bar .clock {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-weight: 800; font-size: 24px; line-height: 1.1; letter-spacing: 0; font-variant-numeric: tabular-nums;
+  }
+  .bar .clock svg { flex: none; width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 359px) { .bar .clock { font-size: 17px; } .bar .clock svg { display: none; } }
   .bar .history { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   .icon-btn {
     width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
@@ -73,7 +82,7 @@
     flex: 1; display: flex; gap: 6px; min-height: 0;
     padding: 0 calc(var(--safe-r) + 6px) calc(var(--safe-b) + 6px) calc(var(--safe-l) + 6px);
   }
-  @media (orientation: portrait) { .court { flex-direction: column; } }
+  :root[data-layout="portrait"] .court { flex-direction: column; }
 
   .half {
     position: relative; flex: 1; min-width: 0; min-height: 0;
@@ -138,7 +147,7 @@
     transition: transform .4s ease;
   }
   .side-arrow.right svg { transform: rotate(180deg); }
-  @media (orientation: portrait) { .side-arrow { display: grid; } }
+  :root[data-layout="portrait"] .side-arrow { display: grid; }
   .team-name { left: 60px; right: 60px; }
 
   /* ---------- modais ---------- */
@@ -220,11 +229,9 @@
   @keyframes splash { 0% { opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
   @keyframes pop { from { transform: scale(.4); } to { transform: scale(1); } }
 
-  /* ---------- cadeado: bloqueia toques acidentais ---------- */
-  .lock-shield { position: fixed; inset: 0; z-index: 9; display: none; }
-  body.locked .lock-shield { display: block; }
-  body.locked #btnLock { position: relative; z-index: 12; background: #fff; color: #111; }
-  body.locked .bar .icon-btn:not(#btnLock) { opacity: .3; }
+  /* ---------- cadeado: trava os outros botões e a rotação; o placar continua funcionando ---------- */
+  body.locked #btnLock { background: #fff; color: #111; }
+  body.locked .bar .icon-btn:not(#btnLock) { opacity: .3; pointer-events: none; }
   #btnLock .closed, body.locked #btnLock .open { display: none; }
   body.locked #btnLock .closed { display: inline; }
   #btnLock.wiggle { animation: wiggle .5s ease; }
@@ -298,10 +305,13 @@
     <svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>
   </button>
   <div class="info">
-    <div class="clock" id="clock">--:--</div>
+    <div class="clock" aria-label="Hora de Brasília">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span id="clock">--:--:--</span>
+    </div>
     <div class="history" id="status">&nbsp;</div>
   </div>
-  <button class="icon-btn" id="btnLock" aria-label="Bloquear a tela">
+  <button class="icon-btn" id="btnLock" aria-label="Travar botões e rotação">
     <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="open" d="M8 11V7a4 4 0 0 1 7.6-1.7"/><path class="closed" d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
   </button>
   <button class="icon-btn" id="btnNew" aria-label="Nova partida">
@@ -418,7 +428,8 @@
     </div>
     <div class="hint">
       Toque no lado do time para marcar ponto. Para tirar um ponto, toque no <b>−</b> ou arraste para baixo no lado do time.
-      O cadeado no topo bloqueia a tela contra toques sem querer; toque nele de novo para desbloquear.
+      O cadeado no topo trava os outros botões e a rotação da tela; marcar e tirar pontos continua funcionando.
+      Toque nele de novo para destravar.
       A bola indica quem está sacando. Em pé, as setas mostram o lado da quadra de cada time
       (para quem está de frente para a quadra): o de cima fica à esquerda e o de baixo, à direita.
       No empate a um ponto do fim (11×11 ou 24×24), o placar zera e quem fizer 3 primeiro ganha o set.
@@ -426,7 +437,6 @@
   </div>
 </div>
 
-<div class="lock-shield" id="lockShield"></div>
 <div class="toast" id="toast"></div>
 <div class="splash" id="splash" aria-live="polite">
   <div class="tie" id="splashTie">11 × 11</div>
@@ -692,7 +702,10 @@
     });
     el.addEventListener('pointerup', (e) => {
       if (!start || e.pointerId !== start.id) return;
-      const dx = e.clientX - start.x, dy = e.clientY - start.y;
+      // arrasto medido na direção do conteúdo (que pode estar girado pelo cadeado)
+      const sx = e.clientX - start.x, sy = e.clientY - start.y;
+      const rad = -turn * Math.PI / 180;
+      const dx = sx * Math.cos(rad) - sy * Math.sin(rad), dy = sx * Math.sin(rad) + sy * Math.cos(rad);
       start = null;
       if (dy > 60 && Math.abs(dy) > Math.abs(dx)) removePoint(t);
       else if (Math.abs(dx) < 20 && Math.abs(dy) < 20) addPoint(t);
@@ -858,44 +871,85 @@
   function paintEmojiRows() { document.querySelectorAll('.emoji-row').forEach((r) => r.paint()); }
 
   // ---------- cadeado ----------
-  // Bloqueado, uma camada invisível segura todos os toques; só o cadeado fica acima dela.
+  // Travado: só o cadeado responde no topo, e a tela não gira (veja fitScreen).
   let lockHintAt = 0;
   $('#btnLock').addEventListener('click', () => {
     const locked = document.body.classList.toggle('locked');
-    $('#btnLock').setAttribute('aria-label', locked ? 'Desbloquear a tela' : 'Bloquear a tela');
-    toast(locked ? '🔒 Tela bloqueada' : '🔓 Tela liberada');
+    lockAngle = locked ? deviceAngle() : null;
+    lockPortrait = innerHeight > innerWidth;
+    $('#btnLock').setAttribute('aria-label', locked ? 'Destravar' : 'Travar botões e rotação');
+    fitScreen();
+    toast(locked ? '🔒 Travado: só o placar funciona' : '🔓 Destravado');
   });
-  $('#lockShield').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
+  // toque em outro botão do topo com o cadeado fechado: o cadeado balança
+  $('.bar').addEventListener('pointerdown', (e) => {
+    if (!document.body.classList.contains('locked') || e.target.closest('#btnLock')) return;
     const btn = $('#btnLock');
     btn.classList.remove('wiggle'); void btn.offsetWidth; btn.classList.add('wiggle');
-    if (Date.now() - lockHintAt > 2500) { lockHintAt = Date.now(); toast('🔒 Toque no cadeado para liberar'); }
+    if (Date.now() - lockHintAt > 2500) { lockHintAt = Date.now(); toast('🔒 Toque no cadeado para destravar'); }
   });
 
-  // ---------- relógio ----------
+  // ---------- relógio (horário de Brasília) ----------
+  let clockFmt;
+  try {
+    clockFmt = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+  } catch (e) {
+    clockFmt = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+  }
   function tickClock() {
-    $('#clock').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('#clock').textContent = clockFmt.format(new Date());
+    setTimeout(tickClock, 1000 - (Date.now() % 1000));  // vira junto com o segundo
   }
   tickClock();
-  setInterval(tickClock, 1000);
-  document.addEventListener('visibilitychange', tickClock);
 
-  // ---------- altura da tela no app da Tela de Início ----------
+  // ---------- tamanho e posição da tela ----------
   const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  // O iPhone não deixa app da Tela de Início travar a rotação. Com o cadeado fechado,
+  // se o aparelho girar, o conteúdo gira ao contrário e a tela parece parada.
+  let lockAngle = null, lockPortrait = null, turn = 0;
+  // ângulo do aparelho: 0 em pé, 90 virado para a esquerda, 270 (-90) para a direita
+  const deviceAngle = () => {
+    const a = typeof window.orientation === 'number' ? window.orientation
+      : screen.orientation ? screen.orientation.angle : 0;
+    return ((a % 360) + 360) % 360;
+  };
+  function readInsets() {
+    const cs = getComputedStyle($('#safeProbe'));
+    return { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0,
+      b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+  }
   function fitScreen() {
-    const root = document.documentElement;
+    const root = document.documentElement, body = document.body;
     const portrait = innerHeight > innerWidth;
     root.toggleAttribute('data-standalone', standalone);
     root.toggleAttribute('data-portrait', portrait);
-    root.style.removeProperty('--app-h');
-    if (!standalone || !portrait) return;
-    const safeTop = parseFloat(getComputedStyle($('#safeProbe')).paddingTop) || 0;
-    const h = Math.max(root.clientHeight, innerHeight);
+    ['--app-h', '--safe-t', '--safe-r', '--safe-b', '--safe-l', '--edge-ramp'].forEach((v) => root.style.removeProperty(v));
+    ['width', 'height', 'left', 'top', 'right', 'transform'].forEach((v) => body.style.removeProperty(v));
+    const ins = readInsets();
     // Bug do iOS: o app começa no topo da tela (por trás da barra de status), mas a
     // altura informada desconta a barra. Nesse caso, a altura real é a da tela toda.
-    if (safeTop > 0 && h < screen.height && h + safeTop <= screen.height + 2) {
-      root.style.setProperty('--app-h', `${h + safeTop}px`);
+    let h = Math.max(root.clientHeight, innerHeight);
+    const shortBug = standalone && portrait && ins.t > 0 && h < screen.height && h + ins.t <= screen.height + 2;
+    if (shortBug) h += ins.t;
+
+    // quanto girar o conteúdo (sentido horário) para desfazer o giro do aparelho
+    turn = lockAngle === null ? 0 : (((lockAngle - deviceAngle()) % 360) + 360) % 360;
+    if (lockAngle !== null && turn % 180 === 0 && portrait !== lockPortrait) turn = 270;  // sem o ângulo
+    const sideways = turn % 180 !== 0;
+    root.dataset.layout = (sideways ? !portrait : portrait) ? 'portrait' : 'landscape';
+
+    if (!turn) {
+      if (shortBug) root.style.setProperty('--app-h', `${h}px`);
+      return;
     }
+    // lados da tela que ficam no topo, na direita, embaixo e na esquerda do conteúdo girado
+    const sides = { 90: ['r', 'b', 'l', 't'], 180: ['b', 'l', 't', 'r'], 270: ['l', 't', 'r', 'b'] }[turn];
+    ['--safe-t', '--safe-r', '--safe-b', '--safe-l'].forEach((v, k) => root.style.setProperty(v, `${ins[sides[k]]}px`));
+    root.style.setProperty('--edge-ramp', '0px');
+    Object.assign(body.style, {
+      width: `${sideways ? h : innerWidth}px`, height: `${sideways ? innerWidth : h}px`,
+      left: '50%', top: '50%', right: 'auto', transform: `translate(-50%, -50%) rotate(${turn}deg)`,
+    });
   }
   fitScreen();
   addEventListener('resize', fitScreen);
