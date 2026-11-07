@@ -15,8 +15,9 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
   e toque em **Começar partida**.
 - **⟲** começa uma nova partida a qualquer momento (pede para confirmar os nomes).
 - **🔒 Cadeado:** trava os outros botões do topo (desfazer, trocar de lado,
-  nova partida, ajustes) e a rotação da tela. Marcar e tirar pontos continua
-  funcionando. Toque nele de novo para destravar.
+  nova partida, ajustes). Marcar e tirar pontos continua funcionando. Toque
+  nele de novo para destravar. Para travar a rotação da tela, use o Bloqueio
+  de Rotação da Central de Controle do iPhone.
 - **🔊 Placar falado:** a cada ponto o celular fala o placar, começando por quem
   fez o ponto ("Tubarões, 5 a 3", "7 iguais"), avisa o vai a 3 e o fim de jogo.
   Usa a voz do próprio iPhone e funciona sem internet. Liga e desliga em ⚙ Ajustes.
