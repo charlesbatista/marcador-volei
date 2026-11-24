@@ -19,16 +19,17 @@ Placar de vôlei para o celular. É um app web (PWA): abre no Safari, você adic
   em um põe o emoji no lugar de "Time A/B" ou na frente do nome
   (ex.: 🦈 Tubarões). Tocar de novo tira.
 - **⚙** ajustes: nome e cor dos times, melhor de 1/3/5 sets, pontos por set
-  (12/25), pontos do set decisivo (igual aos outros ou 15), vai a 3, vencer
-  por 2, troca de lado automática.
+  (10/12/15/21/25), pontos do set decisivo (igual aos outros ou 15), vai a 3,
+  vencer por 2, troca de lado automática.
 - A **bola** mostra quem está sacando (o time que fez o último ponto).
 - **Setas (com o celular em pé):** mostram o lado da quadra de cada time para
   quem está de frente para a quadra: ← o time de cima está à esquerda, → o de
   baixo está à direita. Ao trocar de lado (⇄), as setas giram junto.
 - As **bolinhas** embaixo mostram os sets ganhos (quando joga mais de 1 set).
-- **Vai a 3:** no empate a um ponto do fim (11 × 11 no set de 12, 24 × 24 no
-  de 25), a tela fica dourada, o placar zera e quem fizer 3 primeiro ganha o
-  set. Dá para desligar em ⚙ Ajustes.
+- **Vai a 3:** no empate a um ponto do fim (9 × 9 no set de 10, 11 × 11 no de
+  12, 14 × 14 no de 15, 20 × 20 no de 21, 24 × 24 no de 25), a tela fica
+  dourada, o placar zera e quem fizer 3 primeiro ganha o set. Dá para
+  desligar em ⚙ Ajustes.
 - O placar fica salvo no aparelho: se fechar o app, ele volta de onde parou.
 - A tela fica ligada enquanto o app está aberto (iOS 18.4 ou mais recente).
 

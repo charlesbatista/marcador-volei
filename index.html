@@ -392,7 +392,7 @@
     <div class="field">
       <label>Pontos por set</label>
       <div class="seg" id="segPoints">
-        <button data-v="12">12</button><button data-v="25">25</button>
+        <button data-v="10">10</button><button data-v="12">12</button><button data-v="15">15</button><button data-v="21">21</button><button data-v="25">25</button>
       </div>
     </div>
 
@@ -404,7 +404,7 @@
     </div>
 
     <div class="field">
-      <div class="toggle"><span>Vai a 3 no empate (11×11 ou 24×24)</span><label class="switch"><input type="checkbox" id="optVai3"><i></i></label></div>
+      <div class="toggle"><span>Vai a 3 no empate a 1 ponto do fim (ex.: 11×11 no set de 12)</span><label class="switch"><input type="checkbox" id="optVai3"><i></i></label></div>
       <div class="toggle"><span>Vencer por 2 pontos de diferença</span><label class="switch"><input type="checkbox" id="optWinBy2"><i></i></label></div>
       <div class="toggle"><span>Trocar de lado entre os sets</span><label class="switch"><input type="checkbox" id="optAutoSwap"><i></i></label></div>
       <div class="toggle"><span>Avisar troca de lado no set decisivo</span><label class="switch"><input type="checkbox" id="optTbSwap"><i></i></label></div>
@@ -417,7 +417,7 @@
       Toque no lado do time para marcar ponto. Para tirar um ponto, toque no <b>−</b> ou arraste para baixo no lado do time.
       A bola indica quem está sacando. Em pé, as setas mostram o lado da quadra de cada time
       (para quem está de frente para a quadra): o de cima fica à esquerda e o de baixo, à direita.
-      No empate a um ponto do fim (11×11 ou 24×24), o placar zera e quem fizer 3 primeiro ganha o set.
+      No empate a um ponto do fim (ex.: 11×11 no set de 12, 20×20 no de 21), o placar zera e quem fizer 3 primeiro ganha o set.
     </div>
   </div>
 </div>
@@ -470,7 +470,7 @@
         if (saved.config && saved.config.v !== d.config.v) {
           config.v = d.config.v; config.bestOf = 1; config.points = 12;
         }
-        if (![12, 25].includes(config.points)) config.points = d.config.points;
+        if (![10, 12, 15, 21, 25].includes(config.points)) config.points = d.config.points;
         if (![0, 15].includes(config.tiebreak)) config.tiebreak = d.config.tiebreak;
         return { config, game: { ...d.game, ...saved.game } };
       }
